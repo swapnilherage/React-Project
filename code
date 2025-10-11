@@ -1,0 +1,218 @@
+import React, { useState } from 'react';
+// FIX: Replaced local file import with a public image URL to resolve the compilation error.
+// The image is a placeholder for a blue/white logo, matching the bank theme.
+const logoUrl = 'https://placehold.co/60x60/007bff/ffffff?text=SC';
+
+/**
+ * Renders the user registration screen.
+ * It uses the 'onNavigate' prop to switch back to the Login screen upon successful signup 
+ * or when the user clicks the "Log In" link.
+ */
+function SignUpScreen({ onNavigate }) {
+    // --- STATE MANAGEMENT ---
+    const [fullName, setFullName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [phone, setPhone] = useState('');
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
+    
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    // --- HANDLERS ---
+    const togglePasswordVisibility = () => {
+        setShowPassword(prev => !prev);
+    };
+
+    const toggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword(prev => !prev);
+    };
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
+
+        // 1. Validation Checks
+        if (!agreedToTerms) {
+            console.error('You must agree to the Terms and Privacy Policy to sign up.');
+            // In a real app, display a visible error message to the user here.
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            console.error('Error: Password and Confirm Password do not match.');
+            // In a real app, display a visible error message next to the fields.
+            return;
+        }
+
+        // 2. Mock Registration Logic (Replace with actual API call here)
+        const newUser = { fullName, email, phone };
+        console.log('Attempting to register new user:', newUser);
+        
+        // 3. Navigate back to the Login screen after successful mock registration
+        // This is the key action to switch pages:
+        console.log(`Success! Account created for ${fullName}. Navigating to Login.`);
+        onNavigate('login');
+    };
+
+    // Helper function for the eye icon using Font Awesome
+    const EyeIcon = ({ isVisible, toggleFunction }) => (
+        <span 
+            className="password-toggle-icon" 
+            onClick={toggleFunction} 
+            style={{ 
+                position: 'absolute', 
+                right: '10px', 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                cursor: 'pointer',
+                color: '#555',
+                fontSize: '1.2rem',
+                // Ensure z-index is higher than the input field
+                zIndex: 10 
+            }}
+        >
+            {/* Font Awesome icons (fas fa-eye or fas fa-eye-slash) */}
+            <i className={isVisible ? 'fas fa-eye' : 'fas fa-eye-slash'}></i>
+        </span>
+    );
+
+
+    return (
+        <div className="login-page-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', padding: '20px', backgroundColor: '#f5f5f5' }}>
+            <div className="card login-card shadow-lg signup-card" style={{ 
+                maxWidth: '400px', 
+                width: '100%', 
+                padding: '30px', 
+                borderRadius: '12px', 
+                backgroundColor: 'white', 
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)'
+            }}>
+                <div className="text-center mb-4" style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                    <img 
+                        src={logoUrl} // Using the placeholder URL
+                        alt="Standard Chartered Logo" 
+                        className="logo-img"
+                        style={{ maxWidth: '60px', height: 'auto', marginBottom: '1rem' }}
+                    />
+                    <h1 className="welcome-text" style={{ fontSize: '1.5rem', fontWeight: '700', color: '#333' }}>
+                        Join Standard Chartered
+                    </h1>
+                </div>
+
+                <form onSubmit={handleSubmit}>
+                    {/* Full Name Input */}
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Full Name"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            required
+                            style={{ padding: '10px', width: '100%', borderRadius: '6px', border: '1px solid #ccc' }}
+                        />
+                    </div>
+
+                    {/* Email Address Input */}
+                    <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <input
+                            type="email"
+                            className="form-control"
+                            placeholder="Email Address"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                            style={{ padding: '10px', width: '100%', borderRadius: '6px', border: '1px solid #ccc' }}
+                        />
+                    </div>
+
+                    {/* Password Input */}
+                    <div className="form-group password-input-container" style={{ position: 'relative', marginBottom: '1rem' }}>
+                        <input
+                            type={showPassword ? 'text' : 'password'}
+                            className="form-control"
+                            placeholder="Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                            style={{ padding: '10px 40px 10px 10px', width: '100%', borderRadius: '6px', border: '1px solid #ccc' }}
+                        />
+                        <EyeIcon isVisible={showPassword} toggleFunction={togglePasswordVisibility} />
+                    </div>
+                    
+                    {/* Confirm Password Input */}
+                    <div className="form-group password-input-container" style={{ position: 'relative', marginBottom: '1rem' }}>
+                        <input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            className="form-control"
+                            placeholder="Confirm Password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            required
+                            style={{ padding: '10px 40px 10px 10px', width: '100%', borderRadius: '6px', border: '1px solid #ccc' }}
+                        />
+                         <EyeIcon isVisible={showConfirmPassword} toggleFunction={toggleConfirmPasswordVisibility} />
+                    </div>
+
+                     {/* Phone Number Input */}
+                     <div className="form-group" style={{ marginBottom: '1rem' }}>
+                        <input
+                            type="tel"
+                            className="form-control"
+                            placeholder="Phone Number (Optional)"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            style={{ padding: '10px', width: '100%', borderRadius: '6px', border: '1px solid #ccc' }}
+                        />
+                    </div>
+
+                    {/* Terms and Conditions Checkbox */}
+                    <div className="form-group terms-checkbox" style={{ marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center' }}>
+                            <input
+                                type="checkbox"
+                                checked={agreedToTerms}
+                                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                style={{ marginRight: '8px' }}
+                            />
+                            I agree to the <a href="#" style={{ color: '#007bff', marginLeft: '5px', marginRight: '5px', textDecoration: 'none' }}>Terms & Conditions</a> and <a href="#" style={{ color: '#007bff', marginLeft: '5px', textDecoration: 'none' }}>Privacy Policy</a>
+                        </label>
+                    </div>
+
+                    {/* Sign Up Button */}
+                    <button type="submit" className="btn btn-primary btn-block log-in-btn" style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        borderRadius: '6px', 
+                        backgroundColor: '#007bff', 
+                        color: 'white', 
+                        border: 'none', 
+                        fontSize: '1rem', 
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                    }}>
+                        Sign Up
+                    </button>
+                </form>
+
+                {/* Link back to Login Screen: onNavigate('login') switches the main App component back. */}
+                <div className="text-center mt-3" style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>
+                        Already have an account? 
+                        <a 
+                            href="#" 
+                            className="signup-link" 
+                            onClick={(e) => { e.preventDefault(); onNavigate('login'); }}
+                            style={{ color: '#007bff', marginLeft: '5px', textDecoration: 'none', fontWeight: '600' }}
+                        >
+                            Log In
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default SignUpScreen;
