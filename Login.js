@@ -96,3 +96,89 @@ function LoginScreen({ onLoginSuccess }) {
 
 // Export the component for use in other files.
 export default LoginScreen; 
+
+
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+const LoginScreen = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+
+  // Here we define the “valid credentials” for each role
+  const credentials = {
+    user: {
+      email: 'user@sc.com',
+      password: 'userpass123'
+    },
+    admin: {
+      email: 'admin@sc.com',
+      password: 'adminpass456'
+    },
+    operations: {
+      email: 'operations@sc.com',
+      password: 'opspass789'
+    }
+  };
+
+  const handleLogin = () => {
+    if (!email || !password) {
+      alert('Please enter both email and password.');
+      return;
+    }
+
+    // Check each role
+    if (email === credentials.user.email) {
+      if (password === credentials.user.password) {
+        alert('Successful login! Welcome, User.');
+        navigate('/userpage');
+      } else {
+        alert('Invalid password for user.');
+      }
+    }
+    else if (email === credentials.admin.email) {
+      if (password === credentials.admin.password) {
+        alert('Successful login! Welcome, Admin.');
+        navigate('/adminpage');
+      } else {
+        alert('Invalid password for admin.');
+      }
+    }
+    else if (email === credentials.operations.email) {
+      if (password === credentials.operations.password) {
+        alert('Successful login! Welcome, Operations.');
+        navigate('/operationspage');
+      } else {
+        alert('Invalid password for operations.');
+      }
+    }
+    else {
+      // Email not matched any role
+      alert('Invalid email or user not recognized.');
+    }
+  };
+
+  return (
+    <div>
+      <h2>Login</h2>
+      <input
+        type="email"
+        placeholder="Email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+      />
+      <input
+        type="password"
+        placeholder="Password"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+      />
+      <button onClick={handleLogin}>Log In</button>
+    </div>
+  );
+};
+
+export default LoginScreen;
+
