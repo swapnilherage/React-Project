@@ -1,184 +1,96 @@
-import React, { useState } from 'react'; // Import necessary React hooks
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-// Mock component functions to simulate navigation (e.g., in a real app,
-// you would use react-router-dom's navigate function or similar state management).
-// These simply log the action in this example.
-const navigateToUserPage = () => console.log("NAVIGATING to: User Demo Page");
-const navigateToAdminPage = () => console.log("NAVIGATING to: Admin Demo Page");
-const navigateToOperationsPage = () => console.log("NAVIGATING to: Operations Demo Page");
+const AuthContext = createContext();
 
-// The main functional component for the login screen.
-function LoginScreen({ onLoginSuccess }) {
-    // State hook to store the email input value.
-    const [email, setEmail] = useState('');
-    // State hook to store the password input value.
-    const [password, setPassword] = useState('');
-
-    // Function to handle the form submission when the "Log In" button is clicked.
-    const handleSubmit = (event) => {
-        event.preventDefault(); // Prevents the default browser form submission (page reload).
-
-        // --- Role-Based Routing Logic Starts Here ---
-
-        // 1. Define the specific email addresses for each role.
-        const userEmail = 'user@sc.com';
-        const adminEmail = 'admin@sc.com';
-        const operationsEmail = 'operation@sc.com'; // Note: Corrected typo 'operation@@sc.com' to 'operation@sc.com'
-
-        // 2. Simple validation check (make sure both fields are filled).
-        if (!email || !password) {
-            alert('Please enter both email and password.'); // Show an error message.
-            return; // Stop the function execution if validation fails.
-        }
-
-        // 3. Check the entered email against the predefined roles.
-        if (email === userEmail) {
-            // If the email matches the user email.
-            alert('Successful login! Welcome, User.'); // Show a success message.
-            navigateToUserPage(); // Call the function to navigate to the User page.
-        } else if (email === adminEmail) {
-            // If the email matches the admin email.
-            alert('Successful login! Welcome, Admin.'); // Show a success message.
-            navigateToAdminPage(); // Call the function to navigate to the Admin page.
-        } else if (email === operationsEmail) {
-            // If the email matches the operations email.
-            alert('Successful login! Welcome, Operations.'); // Show a success message.
-            navigateToOperationsPage(); // Call the function to navigate to the Operations page.
-        } else {
-            // If the email does not match any known role.
-            alert('Login Failed: Invalid email or password.'); // Show a generic failure message.
-        }
-    };
-    
-    // Placeholder for other functions like togglePasswordVisibility
-    const togglePasswordVisibility = () => {
-        // Implementation for showing/hiding password input type
-        console.log('Toggling password visibility...');
-    };
-
-    // The component's rendered output (JSX).
-    return (
-        <div className="login-page-container">
-            {/* The rest of your login page UI structure goes here */}
-            
-            <form onSubmit={handleSubmit}>
-                {/* Email Input */}
-                <div className="form-group">
-                    <input
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)} // Update the 'email' state on input change.
-                        required
-                    />
-                </div>
-
-                {/* Password Input */}
-                <div className="form-group">
-                    <input
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)} // Update the 'password' state on input change.
-                        required
-                    />
-                    {/* Placeholder for the eye icon/toggle */}
-                    <span onClick={togglePasswordVisibility}>👁️</span>
-                </div>
-
-                {/* Login Button */}
-                <button type="submit">Log In</button>
-            </form>
-            
-        </div>
-    );
-}
-
-// Export the component for use in other files.
-export default LoginScreen; 
-
-
-
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
-const LoginScreen = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const navigate = useNavigate();
-
-  // Here we define the “valid credentials” for each role
-  const credentials = {
-    user: {
-      email: 'user@sc.com',
-      password: 'userpass123'
-    },
-    admin: {
-      email: 'admin@sc.com',
-      password: 'adminpass456'
-    },
-    operations: {
-      email: 'operations@sc.com',
-      password: 'opspass789'
-    }
-  };
-
-  const handleLogin = () => {
-    if (!email || !password) {
-      alert('Please enter both email and password.');
-      return;
-    }
-
-    // Check each role
-    if (email === credentials.user.email) {
-      if (password === credentials.user.password) {
-        alert('Successful login! Welcome, User.');
-        navigate('/userpage');
-      } else {
-        alert('Invalid password for user.');
-      }
-    }
-    else if (email === credentials.admin.email) {
-      if (password === credentials.admin.password) {
-        alert('Successful login! Welcome, Admin.');
-        navigate('/adminpage');
-      } else {
-        alert('Invalid password for admin.');
-      }
-    }
-    else if (email === credentials.operations.email) {
-      if (password === credentials.operations.password) {
-        alert('Successful login! Welcome, Operations.');
-        navigate('/operationspage');
-      } else {
-        alert('Invalid password for operations.');
-      }
-    }
-    else {
-      // Email not matched any role
-      alert('Invalid email or user not recognized.');
-    }
-  };
-
-  return (
-    <div>
-      <h2>Login</h2>
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={e => setPassword(e.target.value)}
-      />
-      <button onClick={handleLogin}>Log In</button>
-    </div>
-  );
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
-export default LoginScreen;
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [token, setToken] = useState(null); // For JWT token
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    const storedRole = localStorage.getItem('userRole');
+    const storedToken = localStorage.getItem('token');
+    console.log('AuthContext useEffect - storedUser:', storedUser, 'storedRole:', storedRole);
+    if (storedUser && storedRole) {
+      setUser(storedUser);
+      setUserRole(storedRole);
+      setToken(storedToken);
+    }
+  }, []);
+
+  const login = async (email, password) => {
+    try {
+      // Static login logic (current implementation)
+      let role;
+      if (email === 'admin@sc.com' && password === '123') {
+        role = 'Admin';
+      } else if (email === 'user@sc.com' && password === '123') {
+        role = 'User';
+      } else if (email === 'operations@sc.com' && password === '123') {
+        role = 'Operations';
+      } else {
+        throw new Error('Invalid credentials');
+      }
+
+      setUser(email);
+      setUserRole(role);
+      localStorage.setItem('user', email);
+      localStorage.setItem('userRole', role);
+
+      // Commented API login call - uncomment when backend is ready
+      /*
+      const response = await fetch('http://localhost:8080/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user.email);
+        setUserRole(data.user.role);
+        setToken(data.token);
+        localStorage.setItem('user', data.user.email);
+        localStorage.setItem('userRole', data.user.role);
+        localStorage.setItem('token', data.token);
+      } else {
+        throw new Error('Login failed');
+      }
+      */
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setUserRole(null);
+    setToken(null);
+    localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('token');
+  };
+
+  const value = {
+    user,
+    userRole,
+    login,
+    logout,
+    isAuthenticated: !!user,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
