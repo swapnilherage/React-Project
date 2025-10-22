@@ -1,0 +1,16 @@
+/* Main content area - positioned to account for sidebar and navbar */
+.main-content {
+  margin-left: 260px;
+  margin-top: 70px;
+  min-height: calc(100vh - 70px);
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+}
