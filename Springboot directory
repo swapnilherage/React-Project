@@ -242,3 +242,30 @@ public class Role {
     
     public Role() {}
 }
+
+
+package com.scgbs.rwtool.model;
+
+import jakarta.persistence.*;
+// ... other imports
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    // ... id, email, password, etc. fields
+
+    // Replace: private Integer roleId;
+    @ManyToOne(fetch = FetchType.EAGER) // Eagerly load the role when loading the user
+    @JoinColumn(name = "role_id", nullable = false) // Links to the role_id column in the 'users' table
+    private Role role; // <-- NEW FIELD TYPE
+
+    // ... other fields
+
+    // NEW GETTER for Role
+    public Role getRole() {
+        return role;
+    }
+    
+    // ... other getters and setters
+}
