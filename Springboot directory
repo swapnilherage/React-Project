@@ -1,4 +1,4 @@
-//model
+8//model
 
 package com.scgbs.rwtool.model;
 
@@ -268,4 +268,55 @@ public class User {
     }
     
     // ... other getters and setters
+}
+
+
+package com.scgbs.rwtool.controller;
+
+import com.scgbs.rwtool.dto.LoginRequest;
+import com.scgbs.rwtool.dto.LoginResponse;
+import com.scgbs.rwtool.model.User;
+import com.scgbs.rwtool.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/auth")
+@CrossOrigin(origins = "http://localhost:3000") 
+public class AuthController {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            
+            // DANGER: Insecure password check - MUST be replaced with BCrypt in production
+            if (request.getPassword().equals(user.getPassword())) { 
+                
+                LoginResponse response = new LoginResponse();
+                response.setEmail(user.getEmail());
+                
+                // *** THE CORE CHANGE: Get the Role Name from the User object ***
+                // Ensure your User model has the @ManyToOne relationship to the Role model set up correctly.
+                response.setRole(user.getRole().getName()); // <-- SET ROLE HERE
+                // ***************************************************************
+                
+                // Placeholder token
+                response.setToken("example_jwt_token_" + user.getId()); 
+
+                return ResponseEntity.ok(response);
+            }
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+    }
 }
