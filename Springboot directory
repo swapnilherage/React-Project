@@ -1,0 +1,217 @@
+//model
+
+package com.scgbs.rwtool.model;
+
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(name = "role_id", nullable = false)
+    private Integer roleId; // This would typically be a @ManyToOne relationship to a Role entity
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = true;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    // Getters and Setters (omitted for brevity, but you must include them)
+
+    // Example Getter for Email
+    public String getEmail() {
+        return email;
+    }
+    
+    // Example Getter for Password (CRITICAL for login)
+    public String getPassword() {
+        return password;
+    }
+    
+    // Example Setter for Password
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    // You must also include a no-arg constructor
+    public User() {}
+}
+
+//Repository 
+
+
+package com.scgbs.rwtool.repository;
+
+import com.scgbs.rwtool.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    /**
+     * Finds a User entity by its email, which is used for the login process.
+     * The method name is derived by Spring Data JPA convention.
+     */
+    Optional<User> findByEmail(String email);
+}
+
+//DTO 
+package com.scgbs.rwtool.dto;
+
+public class LoginRequest {
+
+    private String email;
+    private String password;
+
+    // Getters and Setters (CRITICAL for Spring to map the JSON payload)
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+
+package com.scgbs.rwtool.dto;
+
+public class LoginResponse {
+
+    private String email;
+    private String token; // Typically a JWT or session token
+    private String name;  // Added based on your previous error where you tried to get a 'name'
+
+    // Getters and Setters
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+    
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+
+//controlr
+package com.scgbs.rwtool.controller;
+
+import com.scgbs.rwtool.dto.LoginRequest;
+import com.scgbs.rwtool.dto.LoginResponse;
+import com.scgbs.rwtool.model.User;
+import com.scgbs.rwtool.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/auth")
+// Added based on what was visible in a previous image
+@CrossOrigin(origins = "http://localhost:3000") 
+public class AuthController {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            
+            // DANGER: THIS IS INSECURE. Match the password exactly as it is in your DB insert.
+            // You MUST use a password encoder (like BCrypt) in production!
+            if (request.getPassword().equals(user.getPassword())) { 
+                
+                LoginResponse response = new LoginResponse();
+                response.setEmail(user.getEmail());
+                // Assuming you have a 'name' field or mapping for the response
+                response.setName(user.getEmail().split("@")[0]); // Example: use part of email as name
+                
+                // Placeholder token: In a real app, generate a secure JWT here.
+                response.setToken("example_jwt_token_" + user.getId()); 
+
+                return ResponseEntity.ok(response);
+            }
+        }
+
+        // If user not found or password incorrect
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+    }
+}
+
+//Config
+package com.scgbs.rwtool.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for API endpoints
+            .authorizeHttpRequests(auth -> auth
+                // Allow unauthenticated access to the login endpoint
+                .requestMatchers("/auth/login", "/auth/**").permitAll() 
+                // All other requests require authentication
+                .anyRequest().authenticated()
+            );
+
+        return http.build();
+    }
+    
+    // NOTE: In a complete setup, you would also define:
+    // 1. A UserDetailsService bean (to load user data for Spring Security)
+    // 2. A PasswordEncoder bean (e.g., BCryptPasswordEncoder)
+}
