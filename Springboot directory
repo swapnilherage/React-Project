@@ -215,3 +215,30 @@ public class SecurityConfig {
     // 1. A UserDetailsService bean (to load user data for Spring Security)
     // 2. A PasswordEncoder bean (e.g., BCryptPasswordEncoder)
 }
+
+package com.scgbs.rwtool.model;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "roles")
+public class Role {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id; // Matches role_id type
+
+    @Column(unique = true, nullable = false)
+    private String name; // 'Admin', 'User', 'Operations'
+
+    // Getters and Setters (must be included)
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public Role() {}
+}
