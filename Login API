@@ -1,1 +1,158 @@
+package com.scgbs.rwtool.model;
 
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    public User() {}
+
+    public User(String email, String password) {
+        this.email = email;
+        this.password = password;
+    }
+
+    // Getters & Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+}
+
+
+package com.scgbs.rwtool.repository;
+
+import com.scgbs.rwtool.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.Optional;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+    Optional<User> findByEmail(String email);
+}
+
+
+package com.scgbs.rwtool.dto;
+
+public class LoginRequest {
+    private String email;
+    private String password;
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+}
+
+
+package com.scgbs.rwtool.dto;
+
+public class LoginResponse {
+    private String message;
+
+    public LoginResponse(String message) {
+        this.message = message;
+    }
+
+    public String getMessage() { return message; }
+}
+
+
+package com.scgbs.rwtool.controller;
+
+import com.scgbs.rwtool.dto.LoginRequest;
+import com.scgbs.rwtool.dto.LoginResponse;
+import com.scgbs.rwtool.model.User;
+import com.scgbs.rwtool.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Optional;
+
+@RestController
+@RequestMapping("/api/auth")
+@CrossOrigin(origins = "*") // allow frontend access
+public class AuthController {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // Register API
+    @PostMapping("/register")
+    public LoginResponse register(@RequestBody LoginRequest req) {
+        if (userRepository.findByEmail(req.getEmail()).isPresent()) {
+            return new LoginResponse("User already exists");
+        }
+        User newUser = new User(req.getEmail(), passwordEncoder.encode(req.getPassword()));
+        userRepository.save(newUser);
+        return new LoginResponse("User registered successfully");
+    }
+
+    // Login API
+    @PostMapping("/login")
+    public LoginResponse login(@RequestBody LoginRequest loginRequest) {
+        Optional<User> userOpt = userRepository.findByEmail(loginRequest.getEmail());
+
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                return new LoginResponse("Login successful");
+            } else {
+                return new LoginResponse("Incorrect password");
+            }
+        } else {
+            return new LoginResponse("User not found");
+        }
+    }
+}
+
+
+package com.scgbs.rwtool.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable());
+        return http.build();
+    }
+}
